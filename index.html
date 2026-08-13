@@ -204,6 +204,11 @@
   </div>
 
   <div id="movelist"></div>
+
+  <div style="margin-top:20px;">
+    <div style="font-family:-apple-system,'SF Mono',monospace;font-size:0.72rem;color:#77716f;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Debug log</div>
+    <div id="debugLog" style="background:#161310;border:1px solid #3a362f;border-radius:6px;padding:10px;font-family:-apple-system,'SF Mono',monospace;font-size:0.72rem;color:#8a8478;max-height:220px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;"></div>
+  </div>
 </main>
 
 <footer>Engine: Stockfish (WASM), running locally in your browser.</footer>
@@ -211,6 +216,22 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/1.0.0-beta.8/chess.min.js"></script>
 <script>
 const STOCKFISH_URL = "https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js";
+
+// --- On-screen debug log (iOS has no console access without a Mac) ----
+function log(msg){
+  const el = document.getElementById("debugLog");
+  if (!el) return;
+  const line = document.createElement("div");
+  line.textContent = "> " + msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+window.addEventListener("error", (e)=>{
+  log("window error: " + e.message + " (" + e.filename + ":" + e.lineno + ")");
+});
+window.addEventListener("unhandledrejection", (e)=>{
+  log("unhandled rejection: " + (e.reason && e.reason.message ? e.reason.message : e.reason));
+});
 
 const PIECE_GLYPH = {
   p:"♟", n:"♞", b:"♝", r:"♜", q:"♛", k:"♚",
@@ -273,31 +294,38 @@ function addMoveRow(moveNumber, player, san, label){
 }
 
 async function createEngine(){
-  // Safari on iOS refuses to create a Worker directly from a cross-origin
-  // URL. Fetch the script text ourselves and spin the Worker up from a
-  // local Blob URL instead — this works on iOS Safari and everywhere else.
+  log("Fetching engine script…");
   const res = await fetch(STOCKFISH_URL);
-  if (!res.ok) throw new Error("Failed to fetch engine script");
+  log("Fetch status: " + res.status);
+  if (!res.ok) throw new Error("Failed to fetch engine script (status " + res.status + ")");
   const scriptText = await res.text();
+  log("Script length: " + scriptText.length + " chars");
   const blob = new Blob([scriptText], { type: "application/javascript" });
   const blobUrl = URL.createObjectURL(blob);
 
   return new Promise((resolve, reject)=>{
     try{
+      log("Creating Worker from blob URL…");
       const sf = new Worker(blobUrl);
-      const timeout = setTimeout(()=>reject(new Error("Engine load timed out")), 10000);
+      const timeout = setTimeout(()=>{
+        log("Timed out waiting for uciok");
+        reject(new Error("Engine load timed out"));
+      }, 10000);
       sf.onmessage = (e)=>{
+        log("engine msg: " + (typeof e.data === "string" ? e.data.slice(0,80) : "[non-string]"));
         if (typeof e.data === "string" && e.data.includes("uciok")){
           clearTimeout(timeout);
           resolve(sf);
         }
       };
       sf.onerror = (err)=>{
+        log("Worker onerror: " + (err.message || err));
         clearTimeout(timeout);
         reject(err);
       };
       sf.postMessage("uci");
     } catch(err){
+      log("createEngine catch: " + err.message);
       reject(err);
     }
   });
@@ -327,6 +355,7 @@ function evaluateFen(sf, fen, depth){
 }
 
 async function runReview(){
+  log("Review button tapped");
   const status = document.getElementById("status");
   const runBtn = document.getElementById("runBtn");
   const pgn = document.getElementById("pgnInput").value.trim();
