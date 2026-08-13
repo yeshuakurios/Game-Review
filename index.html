@@ -213,7 +213,7 @@
 
 <footer>Engine: Stockfish (WASM), running locally in your browser.</footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/1.0.0-beta.8/chess.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 <script>
 const STOCKFISH_URL = "https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js";
 
@@ -368,7 +368,7 @@ async function runReview(){
   }
 
   const chess = new Chess();
-  const ok = chess.loadPgn(pgn, { sloppy: true });
+  const ok = chess.load_pgn(pgn, { sloppy: true });
   if (ok === false){
     status.textContent = "Couldn't parse that PGN — check the format.";
     return;
