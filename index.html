@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Game Review</title>
+<style>
+  :root{
+    --ink:#1c1a17;
+    --paper:#eae6da;
+    --board-dark:#5c6f52;
+    --board-light:#eee9d8;
+    --accent:#b5651d;
+    --brilliant:#1c9e8e;
+    --best:#3f7d3a;
+    --good:#7a8a6f;
+    --inaccuracy:#c9a227;
+    --mistake:#c9701a;
+    --blunder:#a83232;
+    --line:#c9c2ac;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:"Iowan Old Style","Georgia",serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  header{
+    padding:22px 18px 14px;
+    border-bottom:1px solid #3a362f;
+  }
+  header h1{
+    margin:0;
+    font-size:1.5rem;
+    font-weight:600;
+    letter-spacing:0.02em;
+  }
+  header p{
+    margin:6px 0 0;
+    font-size:0.85rem;
+    color:#a9a397;
+    font-family:-apple-system,"SF Mono",monospace;
+  }
+  main{
+    padding:16px;
+    max-width:520px;
+    margin:0 auto;
+  }
+  textarea{
+    width:100%;
+    min-height:90px;
+    background:#242019;
+    color:var(--paper);
+    border:1px solid #423d33;
+    border-radius:6px;
+    padding:10px;
+    font-family:-apple-system,"SF Mono",monospace;
+    font-size:0.9rem;
+    resize:vertical;
+  }
+  .row{
+    display:flex;
+    gap:10px;
+    margin-top:10px;
+  }
+  button{
+    flex:1;
+    background:var(--accent);
+    color:#fff8ee;
+    border:none;
+    border-radius:6px;
+    padding:12px;
+    font-size:1rem;
+    font-family:-apple-system,"SF Mono",monospace;
+    font-weight:600;
+    letter-spacing:0.03em;
+  }
+  button:active{ opacity:0.8; }
+  button.secondary{
+    background:transparent;
+    border:1px solid #423d33;
+    color:var(--paper);
+  }
+  #status{
+    margin-top:10px;
+    font-family:-apple-system,"SF Mono",monospace;
+    font-size:0.8rem;
+    color:#a9a397;
+    min-height:1.2em;
+  }
+  #board{
+    margin:20px auto 0;
+    width:100%;
+    max-width:400px;
+    aspect-ratio:1/1;
+    display:grid;
+    grid-template-columns:repeat(8,1fr);
+    border:1px solid #3a362f;
+  }
+  .sq{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:min(6vw,28px);
+    user-select:none;
+  }
+  .sq.dark{ background:var(--board-dark); }
+  .sq.light{ background:var(--board-light); }
+  .sq.dark .piece-b, .sq.light .piece-b{ color:#111; }
+  .sq .piece-w{ color:#fdfdfd; text-shadow:0 0 1px #000; }
+
+  #accuracy{
+    display:flex;
+    justify-content:space-between;
+    margin-top:18px;
+    font-family:-apple-system,"SF Mono",monospace;
+  }
+  .acc-box{
+    flex:1;
+    text-align:center;
+    padding:10px;
+  }
+  .acc-box .num{
+    font-size:1.8rem;
+    font-weight:700;
+  }
+  .acc-box .lbl{
+    font-size:0.75rem;
+    color:#a9a397;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+  }
+
+  #movelist{
+    margin-top:18px;
+    border-top:1px solid #3a362f;
+  }
+  .mv{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:9px 4px;
+    border-bottom:1px solid #2c2822;
+    font-family:-apple-system,"SF Mono",monospace;
+    font-size:0.88rem;
+  }
+  .mv .num{ color:#77716333; width:2.4em; color:#77716f; }
+  .mv .san{ width:4.6em; }
+  .mv .tag{
+    margin-left:auto;
+    padding:2px 8px;
+    border-radius:4px;
+    font-size:0.72rem;
+    font-weight:700;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    color:#fff;
+  }
+  .tag.brilliant{ background:var(--brilliant); }
+  .tag.best{ background:var(--best); }
+  .tag.good{ background:var(--good); }
+  .tag.inaccuracy{ background:var(--inaccuracy); color:#241f14;}
+  .tag.mistake{ background:var(--mistake); }
+  .tag.blunder{ background:var(--blunder); }
+
+  footer{
+    text-align:center;
+    padding:24px;
+    font-size:0.72rem;
+    color:#6b665b;
+    font-family:-apple-system,"SF Mono",monospace;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Game Review</h1>
+  <p>Paste a PGN. Runs entirely on your phone — nothing is uploaded.</p>
+</header>
+
+<main>
+  <textarea id="pgnInput" placeholder="1. e4 e5 2. Nf3 Nc6 3. Bb5 ...">1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d5 9. exd5 Nxd5</textarea>
+
+  <div class="row">
+    <button id="runBtn">Review game</button>
+    <button id="clearBtn" class="secondary">Clear</button>
+  </div>
+  <div id="status"></div>
+
+  <div id="board"></div>
+
+  <div id="accuracy" style="display:none;">
+    <div class="acc-box">
+      <div class="num" id="accWhite">–</div>
+      <div class="lbl">White accuracy</div>
+    </div>
+    <div class="acc-box">
+      <div class="num" id="accBlack">–</div>
+      <div class="lbl">Black accuracy</div>
+    </div>
+  </div>
+
+  <div id="movelist"></div>
+</main>
+
+<footer>Engine: Stockfish (WASM), running locally in your browser.</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/1.0.0-beta.8/chess.min.js"></script>
+<script>
+const STOCKFISH_URL = "https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js";
+
+const PIECE_GLYPH = {
+  p:"♟", n:"♞", b:"♝", r:"♜", q:"♛", k:"♚",
+  P:"♙", N:"♘", B:"♗", R:"♖", Q:"♕", K:"♔"
+};
+
+const THRESHOLDS = [
+  [10,  "best"],
+  [25,  "good"],
+  [50,  "inaccuracy"],
+  [100, "mistake"],
+  [Infinity, "blunder"],
+];
+
+function classify(cpLoss){
+  for (const [limit, label] of THRESHOLDS){
+    if (cpLoss <= limit) return label;
+  }
+  return "blunder";
+}
+
+function accuracyFromLosses(losses){
+  if (!losses.length) return 100;
+  const avg = losses.reduce((a,b)=>a+b,0) / losses.length;
+  const acc = 103.1668 * Math.exp(-0.04354*avg) - 3.1669;
+  return Math.max(0, Math.min(100, acc)).toFixed(1);
+}
+
+function renderBoard(chess){
+  const boardEl = document.getElementById("board");
+  boardEl.innerHTML = "";
+  const board = chess.board();
+  for (let r=0; r<8; r++){
+    for (let c=0; c<8; c++){
+      const sq = document.createElement("div");
+      const dark = (r+c) % 2 === 1;
+      sq.className = "sq " + (dark ? "dark" : "light");
+      const piece = board[r][c];
+      if (piece){
+        const glyph = piece.color === "w"
+          ? PIECE_GLYPH[piece.type.toUpperCase()]
+          : PIECE_GLYPH[piece.type];
+        sq.innerHTML = `<span class="${piece.color==='w'?'piece-w':'piece-b'}">${glyph}</span>`;
+      }
+      boardEl.appendChild(sq);
+    }
+  }
+}
+
+function addMoveRow(moveNumber, player, san, label){
+  const list = document.getElementById("movelist");
+  const row = document.createElement("div");
+  row.className = "mv";
+  row.innerHTML = `
+    <span class="num">${player==='White' ? moveNumber+'.' : ''}</span>
+    <span class="san">${san}</span>
+    <span class="tag ${label}">${label}</span>
+  `;
+  list.appendChild(row);
+}
+
+function createEngine(){
+  return new Promise((resolve, reject)=>{
+    try{
+      const sf = new Worker(STOCKFISH_URL);
+      sf.onmessage = (e)=>{
+        if (typeof e.data === "string" && e.data.includes("uciok")){
+          resolve(sf);
+        }
+      };
+      sf.postMessage("uci");
+    } catch(err){
+      reject(err);
+    }
+  });
+}
+
+function evaluateFen(sf, fen, depth){
+  return new Promise((resolve)=>{
+    let bestCp = 0;
+    const handler = (e)=>{
+      const line = typeof e.data === "string" ? e.data : "";
+      const cpMatch = line.match(/score cp (-?\d+)/);
+      const mateMatch = line.match(/score mate (-?\d+)/);
+      if (mateMatch){
+        bestCp = parseInt(mateMatch[1],10) > 0 ? 10000 : -10000;
+      } else if (cpMatch){
+        bestCp = parseInt(cpMatch[1],10);
+      }
+      if (line.startsWith("bestmove")){
+        sf.removeEventListener("message", handler);
+        resolve(bestCp);
+      }
+    };
+    sf.addEventListener("message", handler);
+    sf.postMessage("position fen " + fen);
+    sf.postMessage("go depth " + depth);
+  });
+}
+
+async function runReview(){
+  const status = document.getElementById("status");
+  const runBtn = document.getElementById("runBtn");
+  const pgn = document.getElementById("pgnInput").value.trim();
+  document.getElementById("movelist").innerHTML = "";
+  document.getElementById("accuracy").style.display = "none";
+
+  if (!pgn){
+    status.textContent = "Paste a PGN first.";
+    return;
+  }
+
+  const chess = new Chess();
+  const ok = chess.loadPgn(pgn, { sloppy: true });
+  if (ok === false){
+    status.textContent = "Couldn't parse that PGN — check the format.";
+    return;
+  }
+
+  const moves = chess.history({ verbose: true });
+  chess.reset();
+
+  runBtn.disabled = true;
+  status.textContent = "Loading engine…";
+
+  let sf;
+  try{
+    sf = await createEngine();
+  } catch(err){
+    status.textContent = "Couldn't load Stockfish. Check your connection and try again.";
+    runBtn.disabled = false;
+    return;
+  }
+
+  const depth = 12;
+  const whiteLosses = [];
+  const blackLosses = [];
+  let prevCp = await evaluateFen(sf, chess.fen(), depth);
+
+  for (let i=0; i<moves.length; i++){
+    const mv = moves[i];
+    const moverIsWhite = mv.color === "w";
+    status.textContent = `Analyzing move ${i+1} of ${moves.length}…`;
+
+    chess.move(mv.san);
+    renderBoard(chess);
+
+    const cpAfter = await evaluateFen(sf, chess.fen(), depth);
+    const cpLoss = moverIsWhite
+      ? Math.max(0, prevCp - cpAfter)
+      : Math.max(0, cpAfter - prevCp);
+
+    const label = classify(cpLoss);
+    (moverIsWhite ? whiteLosses : blackLosses).push(cpLoss);
+    addMoveRow(Math.floor(i/2)+1, moverIsWhite ? "White" : "Black", mv.san, label);
+
+    prevCp = cpAfter;
+  }
+
+  sf.terminate();
+
+  document.getElementById("accWhite").textContent = accuracyFromLosses(whiteLosses);
+  document.getElementById("accBlack").textContent = accuracyFromLosses(blackLosses);
+  document.getElementById("accuracy").style.display = "flex";
+
+  status.textContent = "Done.";
+  runBtn.disabled = false;
+}
+
+document.getElementById("runBtn").addEventListener("click", runReview);
+document.getElementById("clearBtn").addEventListener("click", ()=>{
+  document.getElementById("pgnInput").value = "";
+  document.getElementById("movelist").innerHTML = "";
+  document.getElementById("accuracy").style.display = "none";
+  document.getElementById("status").textContent = "";
+});
+
+renderBoard(new Chess());
+</script>
+
+</body>
+</html>
