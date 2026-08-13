@@ -272,14 +272,29 @@ function addMoveRow(moveNumber, player, san, label){
   list.appendChild(row);
 }
 
-function createEngine(){
+async function createEngine(){
+  // Safari on iOS refuses to create a Worker directly from a cross-origin
+  // URL. Fetch the script text ourselves and spin the Worker up from a
+  // local Blob URL instead — this works on iOS Safari and everywhere else.
+  const res = await fetch(STOCKFISH_URL);
+  if (!res.ok) throw new Error("Failed to fetch engine script");
+  const scriptText = await res.text();
+  const blob = new Blob([scriptText], { type: "application/javascript" });
+  const blobUrl = URL.createObjectURL(blob);
+
   return new Promise((resolve, reject)=>{
     try{
-      const sf = new Worker(STOCKFISH_URL);
+      const sf = new Worker(blobUrl);
+      const timeout = setTimeout(()=>reject(new Error("Engine load timed out")), 10000);
       sf.onmessage = (e)=>{
         if (typeof e.data === "string" && e.data.includes("uciok")){
+          clearTimeout(timeout);
           resolve(sf);
         }
+      };
+      sf.onerror = (err)=>{
+        clearTimeout(timeout);
+        reject(err);
       };
       sf.postMessage("uci");
     } catch(err){
@@ -340,7 +355,7 @@ async function runReview(){
   try{
     sf = await createEngine();
   } catch(err){
-    status.textContent = "Couldn't load Stockfish. Check your connection and try again.";
+    status.textContent = "Couldn't load Stockfish: " + (err && err.message ? err.message : "unknown error");
     runBtn.disabled = false;
     return;
   }
